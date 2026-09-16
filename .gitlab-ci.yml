@@ -1,0 +1,17 @@
+image: python:3.12-bookworm
+
+stages:
+  - validate
+
+validate:
+  stage: validate
+  variables:
+    PYTHONDONTWRITEBYTECODE: "1"
+    PYTHONUTF8: "1"
+  script:
+    - git --version
+    - python3 -B scripts/run_checks.py
+    - python3 -B scripts/publication_check.py .
+
+# This portable workflow expects the exported skill at repository root and
+# a Linux container runner. Configure private runner tags in your own repo.
