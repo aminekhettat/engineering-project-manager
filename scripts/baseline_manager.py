@@ -178,7 +178,9 @@ def render_baseline(baseline):
     for title, key in (("Related Change Requests", "Related_Change_Requests"), ("Open Deviations", "Open_Deviations"), ("Open Problems Accepted", "Open_Problems_Accepted")):
         lines.extend(["", f"## {title}", ""]); values = baseline.get(key, []); lines.extend(f"- {value}" for value in values); lines.extend([] if values else ["- None"])
     lines.extend(["", "## Lifecycle History", "", "| Timestamp | Actor | Previous | New | Comment |", "|---|---|---|---|---|"])
-    for item in baseline.get("History", []): lines.append(f"| {item.get('timestamp', '')} | {item.get('actor', '')} | {item.get('previous_status') or ''} | {item.get('new_status', '')} | {str(item.get('comment') or '').replace('|', '\\|')} |")
+    for item in baseline.get("History", []):
+        comment = str(item.get("comment") or "").replace("|", "\\|")
+        lines.append(f"| {item.get('timestamp', '')} | {item.get('actor', '')} | {item.get('previous_status') or ''} | {item.get('new_status', '')} | {comment} |")
     return "\n".join(lines) + "\n"
 
 

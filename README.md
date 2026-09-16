@@ -29,7 +29,7 @@ use `project-manager`. Installation does not configure accounts or grant access.
 
 For a Git checkout, clone this dedicated repository into
 `<OPENCLAW_WORKSPACE>/skills/project-manager` and check out a reviewed release
-tag, such as `v1.3.0`. `SKILL.md` is at the repository root; the folder must be
+tag, such as `v1.3.1`. `SKILL.md` is at the repository root; the folder must be
 named `project-manager`. Avoid nesting the repository inside another
 `project-manager` directory. The skill follows the Agent Skills directory
 format and OpenClaw's supported frontmatter extension.

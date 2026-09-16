@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.1 - 2026-09-16
+
+Fixed pre-existing Markdown rendering expressions in baseline and verification
+views that required Python 3.12 syntax despite the documented 3.10 minimum.
+Rendering content and registry semantics are unchanged. The public CI matrix
+exercises the actual Python 3.10, 3.12 and 3.13 runtimes to detect compatibility
+regressions that syntax checks on a newer interpreter cannot establish.
+
 ## 1.3.0 - 2026-09-16
 
 Added five approved, separate authoritative JSON registries: risks, problems,

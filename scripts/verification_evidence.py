@@ -425,9 +425,10 @@ def render_record(item):
         lines.append("- None")
     lines.extend(["", "## History", "", "| Timestamp | Actor | Event | Comment |", "|---|---|---|---|"])
     for entry in item.get("History", []):
+        comment = str(entry.get("comment") or "").replace("|", "\\|")
         lines.append(
             f"| {entry.get('timestamp', '')} | {entry.get('actor', '')} | {entry.get('event', '')} | "
-            f"{str(entry.get('comment') or '').replace('|', '\\|')} |"
+            f"{comment} |"
         )
     return "\n".join(lines) + "\n"
 
