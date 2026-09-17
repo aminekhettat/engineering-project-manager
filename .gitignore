@@ -1,12 +1,4 @@
 __pycache__/
-*.pyc
-*.pyo
-*.bak
-*.bak-*
-*.backup
-*.backup-*
-*~
-*.legacy-*
-*.broken-*
-.coverage
-.pytest_cache/
+*.py[cod]
+release/
+.demo/

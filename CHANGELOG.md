@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.0 - 2026-09-17
+
+Separate the installable runtime (`skills/project-manager`) from contributor
+tests, publication tools, examples and repository documentation. Add English and
+French quickstarts, a reproducible offline FAIL-to-PASS release demonstration,
+compatibility guidance, a static project page and distribution checks. Preserve
+the existing project registry schemas and release rules. Add separately licensed
+MIT-0 export for ClawHub while keeping GitHub source and releases under MIT.
+
 ## 1.3.1 - 2026-09-16
 
 Fixed pre-existing Markdown rendering expressions in baseline and verification

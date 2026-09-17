@@ -1,143 +1,135 @@
-# Preparing a public distribution
+# Publishing a reviewed release
 
-The development repository and its history are private working material. Publish
-an independently reviewed, history-free export of the skill. Do not mirror the
-development repository, push its branches to a public remote, or upload a parent
-workspace. A clean current tree does not make old commits or Git author metadata
-safe to publish.
+Publish only a reviewed snapshot. Do not mirror private development Git history,
+workspace memory, machine configuration, authentication files or real project data.
+The repository source uses MIT. The rights holder has also authorized a separate
+MIT-0 distribution for ClawHub, whose [format rules](https://docs.openclaw.ai/clawhub/skill-format#license)
+require MIT-0. This does not change the GitHub license.
 
-## What the tools check
+## Validate the source
 
-`scripts/publication_check.py` reads only tracked files below the selected skill
-by default. It checks current working-tree bytes, so commit and test the final
-candidate before release. Add intended new distributable files to the Git index
-before this check; untracked files are deliberately absent from the default export.
-
-The check rejects recognizable credential formats, private keys, credential-bearing
-URLs, suspicious credential assignments, personal email addresses, personal home
-paths, private network addresses, private hostnames, and local denylist matches.
-Email examples must use reserved fictional domains such as `example.com`,
-`example.invalid` or a domain ending in `.example`. Test dangerous values by
-assembling fictional string fragments; never use a working credential as a fixture.
-
-Only approved root files and the `scripts`, `docs`, `references`, `templates`,
-`examples`, `tests` and `.github` directories are distributable. The scanner rejects
-runtime/private directories, environment files, backups, credentials, binary or
-non-UTF-8 data, control characters, symlinks, Windows junctions, submodules,
-unmerged index entries and files over 2 MiB. The full snapshot is limited to
-10,000 files and 40 MiB. The current distribution is intentionally text only;
-support for another asset type requires a reviewed change to this policy.
-
-Failures print relative paths, categories and line numbers, never matched content.
-Local denylist terms are redacted from printed paths. Output contains no absolute
-source paths, credentials, remote URLs, Git authors or Git email addresses.
-
-These checks reduce accidental disclosure; they do not prove the absence of all
-secrets or personal information. Contextual names, unknown credential formats,
-encoded data, confidential business text, copyright issues and proprietary
-requirements also need human review. No automated process guarantees a particular
-legal outcome or removal of liability.
-
-## Local denylist
-
-Keep a UTF-8 file **outside the distributable skill** with one private term per
-line: actual organization or customer names, personal names, machine names,
-internal domains, account identifiers and project-specific tokens. Matching is
-case-insensitive literal substring matching. Blank lines and lines starting with
-`#` are ignored. Entries need at least three characters. Choose sufficiently
-specific terms to avoid broad false positives. The file is read locally and is
-never copied into the export or recorded in its manifest.
-
-Do not commit this file to a public repository. Do not add private names to the
-generic scanner or public test fixtures. When a finding occurs, inspect it locally,
-remove unnecessary private context or replace an example manually, then rerun the
-check. Never run a blind global replacement over project evidence or source code.
-
-## Review and export
-
-From a development checkout containing `skills/project-manager`, with a local
-denylist stored outside that checkout:
+From the public source checkout on Linux:
 
 ```sh
-python -B skills/project-manager/scripts/publication_tests.py
-python -B skills/project-manager/scripts/publication_check.py skills/project-manager --denylist ../publication-denylist.txt
-python -B skills/project-manager/scripts/publication_check.py skills/project-manager --denylist ../publication-denylist.txt --history
+python3 -B tools/run_checks.py
+python3 -B tools/publication_check.py . --profile repository
+git diff --check
 ```
 
-The optional history audit examines reachable commits, their metadata and unique
-skill blobs, reporting categories and counts. It does not inspect reflogs,
-unreachable objects, external LFS content, server backups or clones. Historical
-findings block a history-inclusive check. They do not force exporting that history:
-the exporter checks only the current snapshot and never copies `.git`. If a real
-credential was ever exposed, remove it from the candidate and have its owner revoke
-or rotate it through the appropriate private channel.
+The scanner reads tracked paths and current working-tree bytes. Stage intended new
+files before scanning; commit and validate the exact final candidate. In a private
+development workspace, use `publication/project-manager/tools/` for contributor
+tools, `skills/project-manager` for the runtime and `--skill-root` on the test runner.
+The root private CI configuration is not part of the public facade.
 
-Review the files, test results, `VERSION`, license, security instructions and SPICE
-positioning. The package must state that it is an independent SPICE-inspired tool,
-not a certification, conformity assessment, or assurance of project compliance.
-No claim of affiliation or approval by a standards organization should be implied.
-Only distribute a license chosen by the rights holder. Export requires a nonempty
-`LICENSE` or `LICENSE.md`; the scanner alone can be used while that choice is pending.
+An optional local `--denylist FILE` contains private terms, one per line, and must
+stay outside both distributable surfaces. It is never copied or included in a
+manifest. If the deliberately public repository identifier overlaps a private
+term, pass `--public-repository OWNER/REPO`. That exception applies only to the
+exact qualified repository in permitted public contexts, not the owner's name in
+arbitrary text. Review new exceptions; do not broadly suppress personal names.
 
-Create the destination parent first. The destination directory and optional ZIP
-must not exist and must be outside the source skill:
+## Runtime archive for GitHub (MIT)
+
+Create an empty parent output directory outside the sources. Every destination
+and archive name must be new; the exporter refuses existing paths.
 
 ```sh
 mkdir -p release
-python -B skills/project-manager/scripts/export_public_skill.py skills/project-manager --denylist ../publication-denylist.txt --output release/project-manager --archive release/project-manager.zip
-python -B release/project-manager/scripts/publication_check.py release/project-manager --all-files --denylist ../publication-denylist.txt
+python3 -B tools/export_public_skill.py skills/project-manager   --output release/project-manager   --archive release/project-manager-VERSION.zip
+python3 -B tools/publication_check.py release/project-manager   --all-files --require-manifest
 ```
 
-On PowerShell, replace the first command with
-`New-Item -ItemType Directory -Path release` when that parent does not exist.
-`--all-files` is intended for an unpacked standalone snapshot and checks everything
-present, including unexpected runtime artifacts. Avoid generating bytecode caches
-inside the package during validation; the examples use Python's `-B` option.
+Replace VERSION with `skills/project-manager/VERSION`. Generate a SHA-256 companion
+using the archive's basename. Unpack the ZIP into a new temporary directory, scan
+it again with `--all-files --require-manifest` and run the package checker against
+the extracted runtime. Do not edit an exported directory after validation.
 
-The exporter reads and scans the candidate once, then writes those exact bytes.
-It refuses overwrites and output paths within the source, generates
-`PUBLICATION-MANIFEST.json` with the version, relative paths, byte counts and SHA-256
-hashes, and optionally creates a deterministic ZIP under a `project-manager/`
-prefix. The manifest omits itself from its file list to avoid a circular hash;
-its own SHA-256 is printed in the export report. These hashes establish snapshot
-consistency, not author identity or a cryptographic signature.
-When a manifest is present, the standalone check verifies the entire inventory,
-version and file hashes; changed, missing, extra or malformed entries fail.
+`tools/build_release.py --output NEW_DIRECTORY` performs archive generation,
+checksum creation, extraction and manifest/package validation for the public
+checkout. It also rejects a tag version that disagrees with the runtime.
 
-Do not modify the export after validation. Unpack the ZIP into a fresh temporary
-directory and scan it as well before publishing. To publish source files on GitHub,
-create a **new repository from the export**, with a deliberate public Git author
-identity. The release ZIP retains `PUBLICATION-MANIFEST.json`; omit that generated
-manifest from the editable source repository so ordinary contributions do not
-leave a stale release inventory. Generate a fresh manifest for each release and
-check the resulting package again. Never copy a `.git` directory into it. Review the platform's preview,
-visibility, license, release notes and file list before making it public. This
-workflow prepares local files; it does not create repositories, send messages,
-upload data or change remote visibility.
+## Public repository from private sources
 
-## Dedicated repository convention
+From the private development checkout:
 
-The public source places `SKILL.md`, `README.md`, `LICENSE`, scripts, references,
-templates and tests at the repository root. It includes contribution/security
-guidance, changelog, release notes and CI. Tag reviewed releases with their
-version, attach the exported ZIP and a SHA-256 checksum, and document installation
-under the folder name `project-manager`. Never claim registry publication merely
-because a GitHub repository exists; listing on another service is a separate step.
+```sh
+python3 -B publication/project-manager/tools/export_public_skill.py   skills/project-manager --format repository --facade publication/project-manager   --output ../public-source-snapshot
+python3 -B publication/project-manager/tools/publication_check.py   ../public-source-snapshot --profile repository --all-files --require-manifest
+```
 
-These choices follow the self-contained skills and clear installation guidance
-used by [Anthropic's skills](https://github.com/anthropics/skills) and
-[Vercel's agent skills](https://github.com/vercel-labs/agent-skills), while keeping
-one skill in this dedicated repository. The packaging contract follows the
-[Agent Skills specification](https://agentskills.io/specification) and
-[OpenClaw skills documentation](https://docs.openclaw.ai/tools/skills).
-These are publication examples and format references, not endorsements.
+Add the private denylist and explicit public repository option locally as needed.
+The exporter combines the facade at repository root and the runtime under
+`skills/project-manager/`. Each surface receives a manifest. Exported archives
+retain them; omit generated `PUBLICATION-MANIFEST.json` files when synchronizing
+the editable public source. Preserve the public repository's own reviewed history;
+never copy the private `.git` directory or force-push private branches over it.
+Use a deliberate public Git author identity.
 
-## Revalidation and limitations
+## Separate ClawHub distribution (MIT-0)
 
-Run the release's behavior tests, package check and privacy check on each new
-candidate. A successful scanner result applies only to the files and bytes it
-read, with the denylist used on that run. Changes require another scan and export.
-Run the exporter in a trusted local directory without concurrent writers. It is
-not designed as a sandbox against another operating-system user racing filesystem
-changes. The Git history audit is advisory evidence about its stated scope, not a
-history-rewriting or credential-revocation tool.
+Generate a new runtime with an explicit license conversion:
+
+```sh
+python3 -B tools/export_public_skill.py skills/project-manager --license MIT-0   --output release/clawhub-runtime --archive release/project-manager-VERSION-clawhub.zip
+python3 -B tools/publication_check.py release/clawhub-runtime   --all-files --require-manifest
+```
+
+The source remains unchanged. The copy contains the reviewed MIT-0 license text,
+`license: MIT-0` frontmatter and a new manifest. It omits `.bumpversion.cfg` and
+`.gitignore`, which the ClawHub client does not upload, so the manifest describes
+the actual registry payload. Source version metadata stays unchanged; overriding the repository export's
+license is refused. The archive's internal skill folder remains `project-manager`.
+
+Authenticate with your own ClawHub account, review the preview and publish only
+the prepared directory. With ClawHub CLI 0.23.3:
+
+```sh
+clawhub skill publish release/clawhub-runtime --slug openclaw-project-manager   --name "Project Manager" --version VERSION --changelog "Reviewed release changes" --dry-run
+```
+
+After checking ownership, contents, source provenance and intended visibility,
+the same command without `--dry-run` publishes it. Supply `--source-repo`,
+`--source-commit`, `--source-ref` and `--source-path skills/project-manager` with
+the exact public source. Never reuse another service's token or place credentials
+in repository files. Check the resulting listing and security/moderation status;
+an accepted upload is not automatically an endorsed or verified listing.
+
+## What the checks establish
+
+Profiles are explicit: `runtime` permits operational scripts, references,
+templates and runtime documentation; `facade` permits contributor and public
+presentation files; `repository` combines them in the documented layout.
+Files are UTF-8 text. The facade additionally accepts a restricted static SVG
+subset and the fixed static page files with no scripts, embedded applications
+or remote page resources. Runtime code, examples and SVG text are privacy-scanned.
+
+Checks reject recognized credentials, private keys, credential-bearing URLs,
+personal email/home paths, private addresses/hostnames, local denylist matches,
+symlinks/junctions, submodules, unmerged index entries, caches and private paths.
+Limits: 2 MiB per file, 10,000 files and 40 MiB per snapshot. Errors identify paths
+and categories without echoing matched secret values. Manifests inventory exact
+bytes, hashes, version, profile and license; `--require-manifest` also fails when
+an artifact's manifest is missing. Each completed output is published atomically
+without replacement; a directory and ZIP are not one cross-path OS transaction.
+
+Pattern matching does not prove the absence of every secret, encoded value,
+personal fact, proprietary text or rights issue. Review content and provenance.
+The optional `--history` audit covers reachable Git commits and blobs, not reflogs,
+unreachable objects, LFS payloads, server backups or other clones. If a credential
+was exposed, revoke or rotate it at its issuer; deleting a file is insufficient.
+Hashes establish snapshot consistency, not author identity or a signature.
+
+## Release and discovery
+
+Keep `VERSION` and `.bumpversion.cfg` synchronized using `bump2version`, update the
+changelog and preserve old tags. The public CI matrix validates Python 3.10, 3.12
+and 3.13; its packaging job checks installation with the pinned skills CLI and
+uploads validated MIT runtime assets. The release workflow requires successful
+validation of the tag before attaching those assets to a GitHub release.
+
+GitHub Pages serves only `docs/`. The project overview links to real instructions,
+releases, issues and discussions. Registry and directory submissions are separate
+actions. For example, [Awesome OpenClaw Skills](https://github.com/VoltAgent/awesome-openclaw-skills/blob/main/CONTRIBUTING.md)
+requires a published ClawHub listing and its own review. Do not claim inclusion
+until accepted, or manipulate stars, installation counts or security scores.

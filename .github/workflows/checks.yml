@@ -3,6 +3,7 @@ name: Validate skill
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,6 +26,42 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Run behavioral checks
-        run: python3 -B scripts/run_checks.py
-      - name: Check distributable tree
-        run: python3 -B scripts/publication_check.py .
+        run: python3 -B tools/run_checks.py
+      - name: Check distributable repository
+        run: python3 -B tools/publication_check.py . --profile repository
+
+  distribution:
+    needs: validate
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      DISABLE_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.20.0"
+      - name: Verify a project-local skills CLI installation
+        shell: bash
+        run: |
+          install_dir="$(mktemp -d)"
+          cd "$install_dir"
+          npx --yes skills@1.6.0 add "$GITHUB_WORKSPACE" --skill project-manager -a openclaw --copy -y
+          python3 -B "$GITHUB_WORKSPACE/tools/install_smoke.py" "$install_dir/skills/project-manager"
+      - name: Run the offline release demonstration
+        run: python3 -B tools/demo_project.py --output "$RUNNER_TEMP/project-manager-demo"
+      - name: Build and verify release assets
+        run: python3 -B tools/build_release.py --output "$RUNNER_TEMP/project-manager-release"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: project-manager-runtime
+          path: |
+            ${{ runner.temp }}/project-manager-release/*.zip
+            ${{ runner.temp }}/project-manager-release/*.sha256
+          if-no-files-found: error
+          retention-days: 14

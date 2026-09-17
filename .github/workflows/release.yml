@@ -1,0 +1,126 @@
+name: Publish reviewed release
+
+on:
+  workflow_run:
+    workflows: ["Validate skill"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  release:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    concurrency:
+      group: reviewed-release-${{ github.event.workflow_run.head_sha }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify an exact version tag
+        id: version
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ github.event.workflow_run.head_sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git merge-base --is-ancestor "$CANDIDATE_SHA" "refs/remotes/origin/$DEFAULT_BRANCH" || exit 0
+          version="$(git show "$CANDIDATE_SHA:skills/project-manager/VERSION")"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then exit 1; fi
+          tag="v$version"
+          if ! git rev-parse --verify "refs/tags/$tag" >/dev/null 2>&1; then exit 0; fi
+          if [[ "$(git rev-parse "refs/tags/$tag^{commit}")" != "$CANDIDATE_SHA" ]]; then exit 0; fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        if: steps.version.outputs.tag != ''
+        with:
+          name: project-manager-runtime
+          path: ${{ runner.temp }}/project-manager-release-assets
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Bind downloaded assets to the validated Git commit
+        if: steps.version.outputs.tag != ''
+        env:
+          CANDIDATE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import hashlib, json, os, stat, subprocess, zipfile
+          from pathlib import Path
+          sha, tag = os.environ['CANDIDATE_SHA'], os.environ['RELEASE_TAG']
+          def git(*args):
+              return subprocess.check_output(['git', *args])
+          prefix, expected = 'skills/project-manager/', {}
+          for entry in git('ls-tree', '-rz', sha, '--', prefix).split(b'\0'):
+              if not entry:
+                  continue
+              header, encoded = entry.split(b'\t', 1)
+              mode, kind, oid = header.split()
+              assert mode in (b'100644', b'100755') and kind == b'blob', 'Nonregular runtime source'
+              name = encoded.decode('utf-8')
+              assert name.startswith(prefix), 'Unexpected source path'
+              content = git('cat-file', 'blob', oid.decode('ascii'))
+              assert len(content) <= 2 * 1024 * 1024, 'Oversized source file'
+              expected[name[len(prefix):]] = content
+          expected.pop('PUBLICATION-MANIFEST.json', None)
+          assert expected and len(expected) <= 10000, 'Invalid source inventory'
+          assert sum(map(len, expected.values())) <= 40 * 1024 * 1024, 'Oversized source inventory'
+          assert expected['VERSION'].decode('utf-8').strip() == tag[1:], 'Version mismatch'
+          records = [{'path': p, 'bytes': len(b), 'sha256': hashlib.sha256(b).hexdigest()} for p, b in sorted(expected.items())]
+          manifest = {'schema_version': 2, 'name': 'project-manager', 'version': tag[1:],
+                      'distribution': 'history-free-snapshot', 'profile': 'runtime', 'license': 'MIT', 'files': records}
+          expected['PUBLICATION-MANIFEST.json'] = (json.dumps(manifest, indent=2, ensure_ascii=True) + '\n').encode()
+          assets = Path(os.environ['RUNNER_TEMP']) / 'project-manager-release-assets'
+          name = 'project-manager-' + tag[1:] + '.zip'
+          assert {p.name for p in assets.iterdir()} == {name, name + '.sha256'}, 'Unexpected artifact files'
+          archive, checksum = assets / name, assets / (name + '.sha256')
+          assert all(p.is_file() and not p.is_symlink() for p in (archive, checksum)), 'Nonregular artifact'
+          assert archive.stat().st_size <= 40 * 1024 * 1024, 'Oversized archive'
+          digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+          assert checksum.read_bytes() == (digest + '  ' + name + '\n').encode(), 'Checksum mismatch'
+          with zipfile.ZipFile(archive) as bundle:
+              entries = bundle.infolist()
+              assert len(entries) == len(expected), 'Duplicate or missing archive entries'
+              assert {i.filename for i in entries} == {'project-manager/' + p for p in expected}, 'Archive inventory mismatch'
+              for item in entries:
+                  assert not item.flag_bits & 1, 'Encrypted entry'
+                  assert stat.S_IFMT(item.external_attr >> 16) in (0, stat.S_IFREG), 'Nonregular ZIP entry'
+                  assert item.file_size <= 2 * 1024 * 1024, 'Oversized ZIP entry'
+                  assert bundle.read(item) == expected[item.filename[len('project-manager/'):]], 'Archive differs from commit'
+          notes_path = 'docs/release-notes.md'
+          note_entry = git('ls-tree', '-z', sha, '--', notes_path).split(b'\0')[0]
+          assert note_entry.split(b' ', 1)[0] in (b'100644', b'100755'), 'Release notes must be a regular Git blob'
+          notes = git('show', sha + ':' + notes_path)
+          assert len(notes) <= 2 * 1024 * 1024, 'Oversized release notes'
+          notes.decode('utf-8')
+          (Path(os.environ['RUNNER_TEMP']) / 'project-manager-release-notes.md').write_bytes(notes)
+          PY
+      - name: Create the release without replacing published assets
+        if: steps.version.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          CANDIDATE_SHA: ${{ github.event.workflow_run.head_sha }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release already exists; existing assets are preserved."
+            exit 0
+          fi
+          remote_sha="$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq .sha)"
+          if [[ "$remote_sha" != "$CANDIDATE_SHA" ]]; then echo "Tag moved; publication refused."; exit 1; fi
+          archive="$RUNNER_TEMP/project-manager-release-assets/project-manager-${RELEASE_TAG#v}.zip"
+          gh release create "$RELEASE_TAG" "$archive" "$archive.sha256" --verify-tag --title "Project Manager $RELEASE_TAG" --notes-file "$RUNNER_TEMP/project-manager-release-notes.md"

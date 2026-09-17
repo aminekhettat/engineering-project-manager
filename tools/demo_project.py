@@ -1,0 +1,305 @@
+#!/usr/bin/env python3
+"""Run a synthetic, offline blocked-to-ready release demonstration.
+
+Uses the real project CLIs and the maintained minimal release fixture. This is
+an executable example, not an agent evaluation, certification or benchmark.
+"""
+
+import argparse
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import textwrap
+
+from validation_paths import resolve_layout
+
+REQ = "FIXTURE_SWE1_REQ_001@R1"
+APP = "04-implementation/demo_record.py"
+TEST = "05-verification/software/check_record.py"
+PROOF = "05-verification/software/SWE-VERIFICATION-REPORT.md"
+
+CHECK = '''
+"""Synthetic example: execute three concrete acceptance checks."""
+import importlib.util
+from pathlib import Path
+import sys
+
+root = Path(__file__).resolve().parents[2]
+spec = importlib.util.spec_from_file_location("demo_record", root / "04-implementation/demo_record.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+failures = []
+for value, label in (("", "empty record"), ("   ", "whitespace-only record")):
+    try:
+        module.normalize_record(value)
+    except ValueError:
+        print("PASS: rejects " + label)
+    else:
+        failures.append(label)
+        print("FAIL: accepts " + label)
+if module.normalize_record("  sample  ") == "sample":
+    print("PASS: preserves normalized nonempty record")
+else:
+    failures.append("nonempty record")
+    print("FAIL: changes nonempty record")
+print("SYNTHETIC CHECK:", "FAIL" if failures else "PASS", "(3 checks)")
+sys.exit(1 if failures else 0)
+'''
+
+
+class DemoError(RuntimeError):
+    pass
+
+
+def write(project, relative, content):
+    path = project / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
+
+
+class Demo:
+    def __init__(self, layout, project):
+        self.layout, self.project = layout, project
+        # Keep caller identities, Git overrides, hooks and signing out of this
+        # disposable repository. Every git operation here remains local.
+        self.env = {key: value for key, value in layout.environment().items()
+                    if not key.startswith("GIT_") and key not in {"CI_COMMIT_SHA", "GITHUB_SHA"}}
+        self.env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
+                        GIT_TERMINAL_PROMPT="0", PYTHONDONTWRITEBYTECODE="1",
+                        PYTHONIOENCODING="utf-8")
+        self.logs = project / ".demo"
+        self.logs.mkdir()
+        (self.logs / "no-hooks").mkdir()
+        self.number = 0
+
+    def run(self, command, expected=0, log=None, extra_env=None):
+        self.number += 1
+        result = subprocess.run([str(value) for value in command], cwd=self.project,
+                                env=dict(self.env, **(extra_env or {})),
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, encoding="utf-8", errors="replace", timeout=120)
+        name = log or f"command-{self.number:03d}.txt"
+        (self.logs / name).write_text(result.stdout, encoding="utf-8")
+        with (self.logs / "commands.jsonl").open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps({"command": [str(value) for value in command],
+                                     "returncode": result.returncode, "output": name}) + "\n")
+        if result.returncode != expected:
+            raise DemoError(f"Expected exit {expected}, got {result.returncode}; inspect .demo/{name}\n{result.stdout}")
+        return result.stdout
+
+    def script(self, name, *args, **kwargs):
+        return self.run([sys.executable, "-B", self.layout.scripts / name, *args], **kwargs)
+
+    def manager(self, name, *args, **kwargs):
+        return self.script(name, "--project", self.project, *args, **kwargs)
+
+    def tasks(self, command, *args):
+        return self.script("project_state.py", command, self.project, *args)
+
+    def git(self, *args):
+        return self.run(["git", *args])
+
+    def commit(self, message):
+        self.git("add", ".")
+        self.git("commit", "-qm", "Synthetic demo: " + message)
+
+    def gate(self, name, expected, baseline=None):
+        head = self.git("rev-parse", "HEAD").strip()
+        extra = ["--baseline", baseline] if baseline else []
+        return self.script("release_check.py", self.project, *extra, expected=expected,
+                           log=name, extra_env={"CI_COMMIT_SHA": head})
+
+    def execute(self):
+        os.environ["PM_SKILL_ROOT"] = str(self.layout.skill)
+        sys.path.insert(0, str(self.layout.tests))
+        from release_fixture_test import build_fixture
+        build_fixture(self.project)
+        write(self.project, ".gitignore", (self.project / ".gitignore").read_text(encoding="utf-8")
+              + "\n**/.*.lock\n.demo/\n")
+        write(self.project, "README.md", """
+            # Synthetic release demonstration
+
+            Generated by tools/demo_project.py from the Project Manager repository.
+            All roles, requirements and decisions are synthetic. The toy program's
+            checks and release audits were executed locally; this is not an LLM
+            benchmark, a certified assessment or evidence for any real product.
+
+            Start with 00-project/DEMO-PLAN.md and .demo/summary.json. Exact commands
+            and their actual outputs are in .demo/commands.jsonl and .demo/*.txt.
+            Origin is a reserved .invalid placeholder, never contacted. The gate
+            uses CI_COMMIT_SHA=local HEAD to simulate the commit check offline.
+            No hosted CI result, push, deployment or baseline release is claimed.
+        """)
+        write(self.project, "00-project/PROJECT.md", "# Synthetic record checker\n\nOffline teaching example only.")
+        write(self.project, "00-project/DEMO-PLAN.md", """
+            # Synthetic delivery plan
+
+            Goal: reject blank records and preserve normalized nonempty records.
+            TASK-001: repair and verify the toy checker (Builder -> Reviewer).
+            RISK-0001: blank records could pass validation; demonstrate mitigation.
+            PRB-0001: reproduce and resolve the observed blank-record defect.
+            MS-0001: achieve verified delivery after TASK-001 and its checks pass.
+
+            The minimal engineering documents originate from the maintained
+            release fixture. They are teaching artifacts, not reviewed product
+            documentation. Actor/reviewer labels simulate roles; they do not
+            authenticate people or establish independent human review.
+        """)
+        requirement_path = self.project / "01-requirements/software/SWE-REQUIREMENTS.md"
+        requirement = requirement_path.read_text(encoding="utf-8")
+        requirement = requirement.replace("The release fixture must exercise the current requirement model.",
+                                          "Synthetic example of rejecting blank records.")
+        requirement = requirement.replace("Every release audit exits successfully.",
+                                          "Empty and whitespace-only inputs raise ValueError; a padded nonempty input is trimmed.")
+        requirement = requirement.replace("The software shall execute complete release validation deterministically.",
+                                          "The synthetic checker shall reject blank records and trim nonempty records.")
+        requirement_path.write_text(requirement, encoding="utf-8")
+        write(self.project, APP, '"""Synthetic example, deliberately faulty initial version."""\ndef normalize_record(value):\n    return value.strip()')
+        write(self.project, TEST, CHECK)
+        # Replace the fixture's placeholder report before any evidence is sealed.
+        write(self.project, PROOF, f"# Synthetic verification\n\nSWE-VER-001\n\n{REQ}\n\nNot executed yet.")
+        self.git("init", "-q")
+        for key, value in (("user.name", "Synthetic Demo"), ("user.email", "demo@example.invalid"),
+                           ("core.hooksPath", str(self.logs / "no-hooks")), ("commit.gpgSign", "false"),
+                           ("core.autocrlf", "false")):
+            self.git("config", key, value)
+        self.git("remote", "add", "origin", "https://example.invalid/synthetic-release-demo.git")
+        # The fixture exists only inside the destination just created by main().
+        self.tasks("init", "--title", "Synthetic record checker", "--slug", "synthetic-record-checker", "--force")
+        self.tasks("add", "--id", "TASK-001", "--title", "Repair and verify record checker", "--owner", "Builder",
+                   "--priority", "P1", "--domain", "SWE", "--process", "SWE6", "--requirement", REQ,
+                   "--acceptance", "All three executable record checks pass", "--output", PROOF)
+        self.tasks("refresh")
+        self.script("management_init.py", self.project, "--actor", "Demo coordinator")
+        self.manager("change_manager.py", "init")
+        self.manager("baseline_manager.py", "init", "--actor", "Demo configuration manager")
+        self.manager("verification_evidence.py", "init", "--actor", "Demo verifier")
+        self.manager("risk_manager.py", "create", "--title", "Blank records escape validation", "--owner", "Builder",
+                     "--description", "Synthetic blank records could enter the toy output", "--probability", "3", "--impact", "5",
+                     "--mitigation", "Reject blank values and execute the three acceptance checks",
+                     "--task", "TASK-001", "--requirement", REQ, "--actor", "Demo coordinator")
+        self.manager("problem_manager.py", "create", "--title", "Toy checker accepts empty records", "--owner", "Builder",
+                     "--description", "The synthetic checker returns an empty string for blank input", "--severity", "HIGH",
+                     "--task", "TASK-001", "--requirement", REQ, "--actor", "Demo coordinator")
+        self.manager("milestone_manager.py", "create", "--title", "Verified synthetic delivery", "--owner", "Reviewer",
+                     "--due-date", "2099-12-31", "--criterion", "Three record acceptance checks pass",
+                     "--task", "TASK-001", "--release-required", "--actor", "Demo coordinator")
+        self.manager("verification_evidence.py", "create", "--requirement-id", REQ, "--title", "Synthetic record checks",
+                     "--objective", "Execute blank and nonempty record checks", "--expected-result", "Three checks pass",
+                     "--actor", "Demo verifier")
+        print("1. PLAN: TASK-001 READY; RISK-0001 OPEN (15/25); PRB-0001 NEW; MS-0001 PLANNED.", flush=True)
+        before = self.run([sys.executable, "-B", TEST], expected=1, log="check-before.txt")
+        if before.count("FAIL:") != 2 or before.count("PASS:") != 1:
+            raise DemoError("The initial toy defect was not reproduced as expected; inspect .demo/check-before.txt")
+        print("2. REPRODUCE: toy checker fails 2 of 3 actual checks (expected).", flush=True)
+        self.commit("planned work and reproduced defect")
+        blocked = self.gate("release-blocked.txt", expected=1)
+        for expected in ("RELEASE CHECK: FAIL", "RISK-0001", "PRB-0001", "MS-0001", "TASK-001"):
+            if expected not in blocked:
+                raise DemoError(f"Blocked gate did not report {expected}; inspect .demo/release-blocked.txt")
+        print("3. RELEASE GATE: BLOCKED (risk, problem, milestone, task; evidence and baseline pending).", flush=True)
+
+        self.tasks("start", "TASK-001")
+        self.manager("risk_manager.py", "transition", "RISK-0001", "--to", "MITIGATING",
+                     "--reason", "Implement the planned blank-record guard", "--actor", "Demo builder")
+        for target in ("TRIAGED", "IN_PROGRESS"):
+            self.manager("problem_manager.py", "transition", "PRB-0001", "--to", target,
+                         "--reason", "Reproduced defect and assigned the guard implementation", "--actor", "Demo builder")
+        write(self.project, APP, '''
+            """Synthetic example: guard blank values before returning a record."""
+            def normalize_record(value):
+                result = value.strip()
+                if not result:
+                    raise ValueError("Blank records are not allowed")
+                return result
+        ''')
+        passed = self.run([sys.executable, "-B", TEST], log="check-after.txt")
+        if "SYNTHETIC CHECK: PASS (3 checks)" not in passed or passed.count("PASS:") != 3:
+            raise DemoError("Executable acceptance checks did not report success")
+        code_hash = hashlib.sha256((self.project / APP).read_bytes()).hexdigest()
+        test_hash = hashlib.sha256((self.project / TEST).read_bytes()).hexdigest()
+        write(self.project, PROOF, f"# Synthetic verification report\n\nSWE-VER-001\n\n{REQ}\n\n"
+              f"Executed locally for a toy example, not a real product or LLM benchmark.\n\n"
+              f"Command: `python3 {TEST}`\n\nExit code: 0\n\nImplementation SHA-256: {code_hash}\n\n"
+              f"Test SHA-256: {test_hash}\n\n```text\n{passed.strip()}\n```")
+        self.tasks("submit", "TASK-001", "--evidence", PROOF)
+        self.tasks("accept", "TASK-001", "--reviewer", "Demo reviewer", "--note", "Synthetic role: observed three executed checks")
+        self.manager("risk_manager.py", "transition", "RISK-0001", "--to", "MITIGATED", "--residual-probability", "1",
+                     "--residual-impact", "2", "--evidence", PROOF,
+                     "--reason", "The executed toy checks demonstrate the planned mitigation", "--actor", "Demo reviewer")
+        for target in ("RESOLVED", "VERIFIED", "CLOSED"):
+            extra = ["--disposition", "FIXED"] if target == "RESOLVED" else []
+            if target in {"RESOLVED", "VERIFIED"}:
+                extra += ["--evidence", PROOF]
+            self.manager("problem_manager.py", "transition", "PRB-0001", "--to", target,
+                         "--reason", "Blank-record regression checks pass in this synthetic example", "--actor", "Demo reviewer", *extra)
+        self.manager("milestone_manager.py", "transition", "MS-0001", "ACTIVE", "--actor", "Demo coordinator")
+        self.manager("milestone_manager.py", "transition", "MS-0001", "ACHIEVED", "--actor", "Demo coordinator",
+                     "--reviewer", "Demo reviewer", "--review-note", "TASK-001 is DONE and all three toy checks passed",
+                     "--criterion-evidence", "1=" + PROOF)
+        print("4. RESOLVE: 3/3 checks PASS; TASK-001 DONE; risk MITIGATED (2/25); problem CLOSED; milestone ACHIEVED.", flush=True)
+        self.commit("implemented and checked the synthetic candidate")
+        self.manager("baseline_manager.py", "create", "--purpose", "Synthetic offline demonstration candidate", "--actor", "Demo configuration manager")
+        self.commit("created candidate BL-001")
+        self.manager("baseline_manager.py", "freeze", "BL-001", "--actor", "Demo configuration manager")
+        self.commit("froze candidate BL-001")
+        self.manager("verification_evidence.py", "record-result", "EV-001", "--result", "PASS", "--actor", "Demo verifier",
+                     "--summary", "Three toy record checks executed successfully; synthetic demonstration only",
+                     "--baseline", "BL-001", "--artifact", PROOF)
+        self.commit("recorded actual toy verification EV-001")
+        print("5. EVIDENCE: EV-001 PASS linked to the exact requirement revision and frozen BL-001.", flush=True)
+        final = self.gate("release-pass.txt", expected=0, baseline="BL-001")
+        if "RELEASE CHECK: PASS" not in final:
+            raise DemoError("Final gate did not report PASS")
+        if self.git("status", "--porcelain").strip():
+            raise DemoError("Final project has unexpected uncommitted changes")
+        summary = {"synthetic": True, "agent_benchmark": False, "network_used": False,
+                   "gate_before": {"exit_code": 1, "result": "BLOCKED", "log": ".demo/release-blocked.txt"},
+                   "gate_after": {"exit_code": 0, "result": "PASS", "log": ".demo/release-pass.txt"},
+                   "checks_before": {"passed": 1, "failed": 2}, "checks_after": {"passed": 3, "failed": 0},
+                   "task": "DONE", "risk": "MITIGATED", "residual_risk_score": 2,
+                   "problem": "CLOSED", "milestone": "ACHIEVED", "baseline": "BL-001", "baseline_status": "FROZEN",
+                   "evidence": "EV-001", "evidence_status": "PASS", "head": self.git("rev-parse", "HEAD").strip()}
+        (self.logs / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+        print("6. RELEASE GATE: PASS (all real gate audits; local CI commit simulation).", flush=True)
+        print("Inspect .demo/summary.json, .demo/commands.jsonl and .demo/release-*.txt inside the output directory.")
+        print("SYNTHETIC DEMO: PASS. No LLM benchmark, certification, hosted CI, publication or deployment claimed.")
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, required=True, help="New destination directory; must not already exist")
+    parser.add_argument("--skill-root", type=Path, help="Runtime skill path (needed with the private repository layout)")
+    args = parser.parse_args(argv)
+    try:
+        if os.path.lexists(args.output):
+            raise DemoError("Output already exists; choose a new directory. Nothing was changed.")
+        if importlib.util.find_spec("fcntl") is None:
+            raise DemoError("The runtime requires POSIX file locking. Run with Python 3 on Linux/macOS, or Windows WSL.")
+        if shutil.which("git") is None:
+            raise DemoError("Git must be installed and available on PATH.")
+        layout = resolve_layout(args.skill_root)
+        if not (layout.skill / "SKILL.md").is_file() or not (layout.scripts / "release_check.py").is_file():
+            raise DemoError("Runtime skill not found; specify --skill-root for the private repository layout.")
+        if not (layout.tests / "release_fixture_test.py").is_file():
+            raise DemoError("The repository tests/release_fixture_test.py is required; use the full source repository.")
+        output = args.output.absolute()
+        if not output.parent.is_dir():
+            raise DemoError("The output parent directory must already exist.")
+        output.mkdir()  # Exclusive creation: no existing project is ever reused.
+        print("SYNTHETIC OFFLINE DEMO: real CLI execution; all project data and roles are synthetic.", flush=True)
+        Demo(layout, output.resolve()).execute()
+        return 0
+    except (DemoError, OSError, ValueError, subprocess.TimeoutExpired) as exc:
+        print("DEMO ERROR: " + str(exc), file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

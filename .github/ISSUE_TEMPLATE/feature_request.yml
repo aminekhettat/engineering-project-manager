@@ -1,0 +1,23 @@
+name: Suggest an improvement
+description: Propose a concrete project workflow or usability improvement.
+title: "[Idea] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What project need is not covered?
+      description: Describe the expected user outcome using fictitious data.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested behavior and alternatives
+      description: Include constraints and compatibility concerns where relevant.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before submitting
+      options:
+        - label: I have removed credentials, personal information and private project details.
+          required: true

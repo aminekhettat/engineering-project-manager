@@ -1,27 +1,33 @@
 # Contributing
 
-Discuss changes to requirement identity, revision semantics, lifecycle states,
-allocation, baseline integrity or release decisions before implementation.
-Keep bug fixes and backward-compatible improvements focused and testable.
+Start with a small, reproducible issue using synthetic project data. Discuss
+changes to requirement identity, revision semantics, lifecycle states, allocation,
+baseline integrity or release decisions before implementation.
 
-1. Create a branch or isolated worktree from the reviewed development base.
-2. Reproduce the behavior in a synthetic temporary project.
-3. Make a focused change and document user-visible behavior.
-4. Run `python3 scripts/run_checks.py` on Linux with Python 3.10+ and Git.
-5. Review `git diff --check`, tests and the complete staged diff.
-6. Scan the staged skill with `python3 -B scripts/publication_check.py .` before sharing.
+1. Create a branch from the reviewed development base.
+2. Reproduce the behavior in a temporary synthetic project.
+3. Change the runtime in `skills/project-manager/`; add meaningful behavioral
+   tests in `tests/` and update relevant documentation.
+4. On Linux with Python 3.10+ and Git, run `python3 -B tools/run_checks.py`.
+5. Run the [offline demonstration](examples/release-gate/README.md) when changing
+   project lifecycle or release behavior. Review `git diff --check` and the diff.
+6. Stage intended files, then run `python3 -B tools/publication_check.py . --profile repository`.
 
-Use fictitious owners, repositories and `.example` domains in fixtures.
-Keep private infrastructure details, project data and local denylist files
-outside this repository. Do not copy formal standards into contributions.
+In a development workspace that stores this public facade under `publication/`,
+use `python3 -B publication/project-manager/tools/run_checks.py --skill-root skills/project-manager`.
 
-Development may use GitLab or GitHub. CI runner selection belongs to the
-maintainer's environment; it must not be hardcoded to one person's machines in
-the public distribution. Version changes use `.bumpversion.cfg` and `VERSION`;
-the package check detects drift. Preserve old release tags.
-Maintainers can use `bump2version` with this configuration to update both files
-in one operation. Keep the generated `PUBLICATION-MANIFEST.json` in release
-packages only; do not commit a stale release manifest into the editable source.
+Use fictitious owners and reserved example domains. Never submit credentials,
+private infrastructure, real project evidence or local privacy denylists.
+Report vulnerabilities through [private security reporting](https://github.com/aminekhettat/openclaw-project-manager/security/advisories/new).
+Do not copy proprietary standards into this repository.
 
-The full skill runtime targets Linux. Test failures on unsupported native
-platforms must not be hidden by replacing production file locks with no-ops.
+## Versions and releases
+
+`skills/project-manager/VERSION` and `.bumpversion.cfg` are the single version
+source. Run `bump2version` from that directory to update them together, then
+update `CHANGELOG.md`. Do not rewrite published tags. Release manifests belong
+in generated archives, not editable source. See [publication](docs/PUBLICATION.md).
+
+The public GitLab workflow expects a Linux container runner. Private runner tags
+belong in the development environment. Never hide unsupported-platform failures
+by replacing production file locks with no-ops.

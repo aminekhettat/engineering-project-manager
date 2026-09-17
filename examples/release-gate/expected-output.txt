@@ -1,0 +1,9 @@
+SYNTHETIC OFFLINE DEMO: real CLI execution; all project data and roles are synthetic.
+1. PLAN: TASK-001 READY; RISK-0001 OPEN (15/25); PRB-0001 NEW; MS-0001 PLANNED.
+2. REPRODUCE: toy checker fails 2 of 3 actual checks (expected).
+3. RELEASE GATE: BLOCKED (risk, problem, milestone, task; evidence and baseline pending).
+4. RESOLVE: 3/3 checks PASS; TASK-001 DONE; risk MITIGATED (2/25); problem CLOSED; milestone ACHIEVED.
+5. EVIDENCE: EV-001 PASS linked to the exact requirement revision and frozen BL-001.
+6. RELEASE GATE: PASS (all real gate audits; local CI commit simulation).
+Inspect .demo/summary.json, .demo/commands.jsonl and .demo/release-*.txt inside the output directory.
+SYNTHETIC DEMO: PASS. No LLM benchmark, certification, hosted CI, publication or deployment claimed.

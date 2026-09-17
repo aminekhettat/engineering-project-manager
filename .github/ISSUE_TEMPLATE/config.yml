@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/aminekhettat/openclaw-project-manager/security/advisories/new
+    about: Report vulnerabilities privately; do not disclose sensitive details in an issue.
+  - name: Questions and use cases
+    url: https://github.com/aminekhettat/openclaw-project-manager/discussions
+    about: Discuss setup, workflow tailoring and sanitized examples.
