@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/aminekhettat/engineering-project-manager)](https://github.com/aminekhettat/engineering-project-manager/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[Français](README.fr.md) · [Get started](docs/getting-started.md) · [Run the demo](examples/release-gate/README.md) · [Compatibility](docs/compatibility.md)
+[Français](README.fr.md) · [Get started](docs/getting-started.md) · [Run the demo](examples/release-gate/README.md) · [Compatibility](docs/compatibility.md) · [ClawHub](https://clawhub.ai/aminekhettat/skills/engineering-project-manager)
 
 An engineering project management skill that helps your agent ask the right setup
 questions, delegate bounded tasks and keep requirements, changes, baselines,

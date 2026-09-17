@@ -323,6 +323,19 @@ class PublicationTests(unittest.TestCase):
             self.assertTrue(svg_findings("docs/assets/workflow.svg", value, ("private-customer",)), value)
         self.assertEqual(svg_findings("docs/assets/workflow.svg", '<svg><defs><rect id="shape" width="20" height="20"/></defs><use href="#shape"/></svg>', ()), [])
 
+    def test_canonical_registry_exception_requires_exact_public_identity(self):
+        repository = "fictional-owner/project-manager"
+        denylist = ("fictional-owner",)
+        listing = "https://clawhub.ai/fictional-owner/skills/project-manager"
+        for text in (listing, "[ClawHub](" + listing + ")", '<a href="' + listing + '">Skill</a>'):
+            self.assertTrue(scan_text("README.md", text, denylist))
+            self.assertEqual(scan_text("README.md", text, denylist, repository), [])
+        for text in ("fictional-owner", listing + "-private", listing + "/private", listing + ".evil",
+                     listing.replace("clawhub.ai", "example.com"), listing.replace("https:", "http:"),
+                     "https://example.com/" + listing, listing + "?private=true"):
+            self.assertTrue(scan_text("README.md", text, denylist, repository), text)
+        self.assertTrue(scan_text("README.md", listing + "\n" + "/home/" + "fictional-owner", denylist, repository))
+
     def test_static_page_uses_only_packaged_resources_and_no_active_content(self):
         facade = self.make_facade()
         css = facade / "docs/site.css"

@@ -198,6 +198,10 @@ def scan_text(relative: str, text: str, denylist: tuple[str, ...] = (), public_r
     if validate_public_repository(public_repository) is not None:
         pattern = re.compile(r"(?<![A-Za-z0-9_.@-])" + re.escape(public_repository) + r"(?:\.git)?(?![A-Za-z0-9_.-])")
         authorized = [(match.start(), match.end()) for match in pattern.finditer(text)]
+        owner, repository = public_repository.split("/", 1)
+        listing = "https://clawhub.ai/" + owner + "/skills/" + repository
+        listing_pattern = re.compile(r"(?<![A-Za-z0-9_./:@-])" + re.escape(listing) + r"(?=$|[\s<>\"')\]}])")
+        authorized.extend((match.start(), match.end()) for match in listing_pattern.finditer(text))
     for term in denylist:
         for match in re.finditer(re.escape(term), text, re.I):
             if not any(start <= match.start() and match.end() <= end for start, end in authorized):

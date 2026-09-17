@@ -6,7 +6,7 @@
 [![Version](https://img.shields.io/github/v/release/aminekhettat/engineering-project-manager)](https://github.com/aminekhettat/engineering-project-manager/releases/latest)
 [![Licence MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[English](README.md) · [Démarrage](docs/getting-started.fr.md) · [Démonstration](examples/release-gate/README.md) · [Compatibilité](docs/compatibility.md)
+[English](README.md) · [Démarrage](docs/getting-started.fr.md) · [Démonstration](examples/release-gate/README.md) · [Compatibilité](docs/compatibility.md) · [ClawHub](https://clawhub.ai/aminekhettat/skills/engineering-project-manager)
 
 Ce skill aide un agent à cadrer un projet d'ingénierie, poser les questions de
 configuration, déléguer des tâches bornées et maintenir la cohérence entre

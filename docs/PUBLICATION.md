@@ -27,7 +27,9 @@ stay outside both distributable surfaces. It is never copied or included in a
 manifest. If the deliberately public repository identifier overlaps a private
 term, pass `--public-repository OWNER/REPO`. That exception applies only to the
 exact qualified repository in permitted public contexts, not the owner's name in
-arbitrary text. Review new exceptions; do not broadly suppress personal names.
+arbitrary text. It also covers the exact canonical `https://clawhub.ai/OWNER/skills/REPO`
+listing derived from that same identifier, with all other detectors still active.
+Review new exceptions; do not broadly suppress personal names.
 
 ## Runtime archive for GitHub (MIT)
 
@@ -88,8 +90,9 @@ the prepared directory. With ClawHub CLI 0.23.3:
 clawhub skill publish release/clawhub-runtime --slug engineering-project-manager   --name "Project Manager" --version VERSION --changelog "Reviewed release changes" --dry-run
 ```
 
-The `openclaw-` prefix is reserved by ClawHub; the registry slug deliberately
-differs from the GitHub repository name. The dry run does not prove that a slug
+The `openclaw-` prefix is reserved by ClawHub. The registry slug and GitHub
+repository name are both `engineering-project-manager`; the installed skill
+identity remains `project-manager`. The dry run does not prove that a slug
 is allowed by all server-side publication rules.
 
 After checking ownership, contents, source provenance and intended visibility,
