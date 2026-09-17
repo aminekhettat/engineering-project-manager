@@ -6,7 +6,7 @@ evidence, risks, problems, milestones and release gates.
 
 Read [SKILL.md](SKILL.md) for the agent workflow. The full installation guide,
 demonstration, contribution tools and changelog are in the
-[source repository](https://github.com/aminekhettat/openclaw-project-manager).
+[source repository](https://github.com/aminekhettat/engineering-project-manager).
 
 ## Requirements and use
 

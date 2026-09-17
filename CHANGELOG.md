@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.1 - 2026-09-17
+
+Align the public and development repository names with the ClawHub slug
+`engineering-project-manager`. Update installation, documentation and runtime
+homepage links; retain `project-manager` as the installed skill identity.
+Clarify the reserved ClawHub namespace and ZIP compression reproducibility.
+No project record schemas or operational rules change.
+
 ## 1.4.0 - 2026-09-17
 
 Separate the installable runtime (`skills/project-manager`) from contributor

@@ -10,7 +10,7 @@ SSH configurée. N'inscrivez jamais de secret dans le questionnaire.
 Depuis votre workspace OpenClaw, avec Node.js 22.20+ / npm :
 
 ```sh
-npx skills@1.6.0 add aminekhettat/openclaw-project-manager --skill project-manager -a openclaw --copy
+npx skills@1.6.0 add aminekhettat/engineering-project-manager --skill project-manager -a openclaw --copy
 ```
 
 Vérifiez la destination proposée. La variable `DISABLE_TELEMETRY=1` désactive la
@@ -18,7 +18,7 @@ télémétrie de l'installateur. Évitez une installation globale si vous souhai
 limiter le skill à ce workspace.
 
 Autre possibilité : téléchargez le ZIP `project-manager-VERSION.zip` et son fichier
-`.sha256` depuis les [releases](https://github.com/aminekhettat/openclaw-project-manager/releases/latest).
+`.sha256` depuis les [releases](https://github.com/aminekhettat/engineering-project-manager/releases/latest).
 Exécutez `sha256sum -c project-manager-VERSION.zip.sha256`, puis extrayez le dossier
 complet `project-manager/` dans `<OPENCLAW_WORKSPACE>/skills/` ou votre répertoire
 de skills gérés. Depuis un clone source, copiez `skills/project-manager/` ; la

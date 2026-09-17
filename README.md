@@ -2,8 +2,8 @@
 
 **Turn project intent into reviewed work, traceable evidence and a checked release.**
 
-[![Checks](https://github.com/aminekhettat/openclaw-project-manager/actions/workflows/checks.yml/badge.svg)](https://github.com/aminekhettat/openclaw-project-manager/actions/workflows/checks.yml)
-[![Release](https://img.shields.io/github/v/release/aminekhettat/openclaw-project-manager)](https://github.com/aminekhettat/openclaw-project-manager/releases/latest)
+[![Checks](https://github.com/aminekhettat/engineering-project-manager/actions/workflows/checks.yml/badge.svg)](https://github.com/aminekhettat/engineering-project-manager/actions/workflows/checks.yml)
+[![Release](https://img.shields.io/github/v/release/aminekhettat/engineering-project-manager)](https://github.com/aminekhettat/engineering-project-manager/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 [Français](README.fr.md) · [Get started](docs/getting-started.md) · [Run the demo](examples/release-gate/README.md) · [Compatibility](docs/compatibility.md)
@@ -25,11 +25,11 @@ Runtime: **Linux, Python 3.10+ and Git**. No Python packages required.
 Run in your OpenClaw workspace (Node.js 22.20+ / npm is needed for this installer):
 
 ```sh
-npx skills@1.6.0 add aminekhettat/openclaw-project-manager --skill project-manager -a openclaw --copy
+npx skills@1.6.0 add aminekhettat/engineering-project-manager --skill project-manager -a openclaw --copy
 ```
 
 Review the installer destination before confirming. Or download the runtime ZIP
-and SHA-256 file from [Releases](https://github.com/aminekhettat/openclaw-project-manager/releases/latest),
+and SHA-256 file from [Releases](https://github.com/aminekhettat/engineering-project-manager/releases/latest),
 verify the hash and extract `project-manager/` into your configured skills directory.
 Start a new agent session. See [installation and first project](docs/getting-started.md)
 for paths, updates and the source-checkout option.
@@ -89,7 +89,7 @@ verification remain necessary. [Implemented capabilities and limits](skills/proj
 - [Positioning and related projects](docs/comparison.md) — engineering control versus product discovery and generic planning.
 - [Agent evaluation scenarios](examples/agent-evaluation.md) — reproducible exercises, with no unmeasured success claims.
 - [Contributing](CONTRIBUTING.md), [changelog](CHANGELOG.md), [security](SECURITY.md) and [publication](docs/PUBLICATION.md).
-- [Report a reproducible bug](https://github.com/aminekhettat/openclaw-project-manager/issues/new/choose) or [discuss a use case](https://github.com/aminekhettat/openclaw-project-manager/discussions).
+- [Report a reproducible bug](https://github.com/aminekhettat/engineering-project-manager/issues/new/choose) or [discuss a use case](https://github.com/aminekhettat/engineering-project-manager/discussions).
 
 GitHub source and release archives use [MIT](LICENSE). A separately generated
 ClawHub distribution uses MIT-0 under that registry's rules; see its packaged

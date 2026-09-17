@@ -2,8 +2,8 @@
 
 **Passer d'une intention à des travaux revus, des preuves traçables et une livraison contrôlée.**
 
-[![Contrôles](https://github.com/aminekhettat/openclaw-project-manager/actions/workflows/checks.yml/badge.svg)](https://github.com/aminekhettat/openclaw-project-manager/actions/workflows/checks.yml)
-[![Version](https://img.shields.io/github/v/release/aminekhettat/openclaw-project-manager)](https://github.com/aminekhettat/openclaw-project-manager/releases/latest)
+[![Contrôles](https://github.com/aminekhettat/engineering-project-manager/actions/workflows/checks.yml/badge.svg)](https://github.com/aminekhettat/engineering-project-manager/actions/workflows/checks.yml)
+[![Version](https://img.shields.io/github/v/release/aminekhettat/engineering-project-manager)](https://github.com/aminekhettat/engineering-project-manager/releases/latest)
 [![Licence MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 [English](README.md) · [Démarrage](docs/getting-started.fr.md) · [Démonstration](examples/release-gate/README.md) · [Compatibilité](docs/compatibility.md)
@@ -26,11 +26,11 @@ Prérequis : **Linux, Python 3.10+ et Git**. Aucune dépendance Python à instal
 Depuis votre workspace OpenClaw, avec Node.js 22.20+ / npm pour cet installateur :
 
 ```sh
-npx skills@1.6.0 add aminekhettat/openclaw-project-manager --skill project-manager -a openclaw --copy
+npx skills@1.6.0 add aminekhettat/engineering-project-manager --skill project-manager -a openclaw --copy
 ```
 
 Vérifiez la destination proposée. Vous pouvez aussi télécharger le ZIP du runtime
-et son SHA-256 depuis les [versions publiées](https://github.com/aminekhettat/openclaw-project-manager/releases/latest),
+et son SHA-256 depuis les [versions publiées](https://github.com/aminekhettat/engineering-project-manager/releases/latest),
 vérifier l'empreinte et extraire `project-manager/` dans votre répertoire de skills.
 Démarrez une nouvelle session agent. [Guide détaillé](docs/getting-started.fr.md).
 
@@ -88,8 +88,8 @@ des essais restent des responsabilités humaines. [Capacités et limites](skills
 [Positionnement](docs/comparison.md) · [Contribuer](CONTRIBUTING.md) ·
 [Versions](CHANGELOG.md) · [Sécurité](SECURITY.md) · [Publication](docs/PUBLICATION.md)
 
-Signalez un [bug reproductible](https://github.com/aminekhettat/openclaw-project-manager/issues/new/choose)
-ou partagez un cas d'usage dans les [discussions](https://github.com/aminekhettat/openclaw-project-manager/discussions).
+Signalez un [bug reproductible](https://github.com/aminekhettat/engineering-project-manager/issues/new/choose)
+ou partagez un cas d'usage dans les [discussions](https://github.com/aminekhettat/engineering-project-manager/discussions).
 Les sources et archives GitHub sont sous [MIT](LICENSE). La distribution ClawHub,
 générée séparément, utilise MIT-0 conformément aux règles du registre. Les standards
 externes conservent leurs propres droits. Les exemples partagés doivent être anonymisés.

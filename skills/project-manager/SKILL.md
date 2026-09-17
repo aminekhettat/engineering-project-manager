@@ -4,7 +4,7 @@ description: "Manage substantial engineering and software projects end to end: d
 user-invocable: true
 license: MIT
 compatibility: "Linux, Python 3.10+ and Git. GitHub/GitLab bootstrap additionally needs authenticated gh/glab; SSH remotes need SSH access."
-metadata: {"openclaw":{"requires":{"bins":["python3","git"]},"os":["linux"],"homepage":"https://github.com/aminekhettat/openclaw-project-manager"}}
+metadata: {"openclaw":{"requires":{"bins":["python3","git"]},"os":["linux"],"homepage":"https://github.com/aminekhettat/engineering-project-manager"}}
 ---
 
 # Project Manager
@@ -207,6 +207,6 @@ the current project. Remaining capability gaps are tracked in
 `docs/INDUSTRIALIZATION-ROADMAP.md`.
 
 For changes to the skill itself, use the source repository's
-[contribution guide](https://github.com/aminekhettat/openclaw-project-manager/blob/main/CONTRIBUTING.md).
+[contribution guide](https://github.com/aminekhettat/engineering-project-manager/blob/main/CONTRIBUTING.md).
 Contributor tests and publication tools live in that repository, outside the
 installed runtime. Never publish a project workspace or private Git history.

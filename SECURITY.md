@@ -5,7 +5,7 @@ examples. Refer to credential stores, authenticated CLI profiles or environment
 variable names. Keep configuration values separate from executable commands.
 
 Before public distribution, export a clean skill snapshot and scan it as
-described in the source repository's [publication guide](https://github.com/aminekhettat/openclaw-project-manager/blob/main/docs/PUBLICATION.md). Review the files and manifest as well as
+described in the source repository's [publication guide](https://github.com/aminekhettat/engineering-project-manager/blob/main/docs/PUBLICATION.md). Review the files and manifest as well as
 the automated findings. Pattern scanning cannot prove the absence of every
 secret, personal fact or proprietary detail.
 

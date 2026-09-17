@@ -190,7 +190,7 @@ def export_skill(root: Path, output: Path, archive: Path | None = None,
                 prepared_zip = Path(zip_name)
                 try:
                     with zipfile.ZipFile(prepared_zip, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
-                        prefix = "project-manager/" if profile == "runtime" else "openclaw-project-manager/"
+                        prefix = "project-manager/" if profile == "runtime" else "engineering-project-manager/"
                         for name, content in sorted(payload.items()):
                             entry = zipfile.ZipInfo(prefix + name, date_time=(1980, 1, 1, 0, 0, 0))
                             entry.create_system = 3

@@ -18,7 +18,7 @@ use `python3 -B publication/project-manager/tools/run_checks.py --skill-root ski
 
 Use fictitious owners and reserved example domains. Never submit credentials,
 private infrastructure, real project evidence or local privacy denylists.
-Report vulnerabilities through [private security reporting](https://github.com/aminekhettat/openclaw-project-manager/security/advisories/new).
+Report vulnerabilities through [private security reporting](https://github.com/aminekhettat/engineering-project-manager/security/advisories/new).
 Do not copy proprietary standards into this repository.
 
 ## Versions and releases

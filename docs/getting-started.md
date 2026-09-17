@@ -13,7 +13,7 @@ Installation alone grants no account, repository or infrastructure permissions.
 From your OpenClaw workspace, use the [skills CLI](https://github.com/vercel-labs/skills):
 
 ```sh
-npx skills@1.6.0 add aminekhettat/openclaw-project-manager --skill project-manager -a openclaw --copy
+npx skills@1.6.0 add aminekhettat/engineering-project-manager --skill project-manager -a openclaw --copy
 ```
 
 The installer needs Node.js 22.20+ / npm and network access. Inspect its proposed path;
@@ -21,7 +21,7 @@ avoid the global option unless you intend a shared installation. The CLI may sen
 anonymous installation telemetry; set `DISABLE_TELEMETRY=1` to disable it.
 
 For an archive installation, download `project-manager-VERSION.zip` and its
-`.sha256` companion from the [release page](https://github.com/aminekhettat/openclaw-project-manager/releases/latest).
+`.sha256` companion from the [release page](https://github.com/aminekhettat/engineering-project-manager/releases/latest).
 Run `sha256sum -c project-manager-VERSION.zip.sha256` in the download directory.
 Extract its complete `project-manager/` folder into `<OPENCLAW_WORKSPACE>/skills/`
 or the managed skills directory you configured. Start a fresh agent session.

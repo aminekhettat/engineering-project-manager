@@ -1,24 +1,19 @@
-# Project Manager 1.4.0
+# Project Manager 1.4.1
 
-This release makes the skill easier to discover, install, evaluate and contribute
-to while preserving the engineering record schemas and deterministic release rules.
+The GitHub and development repositories now use `engineering-project-manager`,
+aligned with the ClawHub slug. Installation instructions, source links and the
+runtime homepage use the new repository name. The installed skill identity and
+runtime archive directory remain `project-manager`; existing project data and
+operational rules are unchanged.
 
-- Install only `skills/project-manager/`; tests, examples and publication tools
-  now live at repository root in the full source checkout.
-- English and French quickstarts, clear compatibility guidance and a static
-  project overview explain setup, delegation and release evidence.
-- An offline demonstration executes a failing toy check, fixes it and moves the
-  complete release gate from BLOCKED to PASS using real project commands.
-- CI validates three Python versions, an actual skills CLI installation and
-  reproducible MIT runtime archives with SHA-256 inventories.
-- ClawHub receives a separately generated MIT-0 runtime; GitHub remains MIT.
+This retains the 1.4.0 distribution improvements: separate runtime and contributor
+resources, bilingual guides, an executed offline release demonstration, three
+Python versions in CI, checked installation and verified release archives.
 
-Upgrade: replace the installed runtime from the ZIP after backing up any local
-changes. If installing from source, use `skills/project-manager/`, not the
-repository root. Restart the agent session. Existing projects and generated tool
-copies are not migrated automatically.
+GitHub source and archives remain MIT. The separate ClawHub runtime is MIT-0.
+The reserved `openclaw-` registry prefix is no longer used. SPICE-like, not
+certified; no conformity assessment or capability level is claimed.
 
 Requires Linux, Python 3.10+ and Git. The optional skills@1.6.0 installer requires
-Node.js 22.20+. Other agent hosts and native Windows runtime are not validated.
-SPICE-like, not certified: a passing gate is not conformity, certification or a
-capability level. Read the documented scope, security guidance and known limits.
+Node.js 22.20+. Back up local customizations, replace the installed runtime and
+start a fresh agent session. Project-local tool copies are not migrated silently.

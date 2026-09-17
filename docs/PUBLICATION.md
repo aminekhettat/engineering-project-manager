@@ -85,8 +85,12 @@ Authenticate with your own ClawHub account, review the preview and publish only
 the prepared directory. With ClawHub CLI 0.23.3:
 
 ```sh
-clawhub skill publish release/clawhub-runtime --slug openclaw-project-manager   --name "Project Manager" --version VERSION --changelog "Reviewed release changes" --dry-run
+clawhub skill publish release/clawhub-runtime --slug engineering-project-manager   --name "Project Manager" --version VERSION --changelog "Reviewed release changes" --dry-run
 ```
+
+The `openclaw-` prefix is reserved by ClawHub; the registry slug deliberately
+differs from the GitHub repository name. The dry run does not prove that a slug
+is allowed by all server-side publication rules.
 
 After checking ownership, contents, source provenance and intended visibility,
 the same command without `--dry-run` publishes it. Supply `--source-repo`,
@@ -119,6 +123,9 @@ The optional `--history` audit covers reachable Git commits and blobs, not reflo
 unreachable objects, LFS payloads, server backups or other clones. If a credential
 was exposed, revoke or rotate it at its issuer; deleting a file is insufficient.
 Hashes establish snapshot consistency, not author identity or a signature.
+ZIP order, timestamps and permissions are fixed. Compressed bytes can differ
+between Python/zlib versions; compare inventories and hashes of the extracted
+files, and use the checksum published with the official CI-built archive.
 
 ## Release and discovery
 
